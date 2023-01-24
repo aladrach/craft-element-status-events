@@ -1,7 +1,7 @@
 <?php
 
 namespace putyourlightson\elementstatusevents\commands;
-
+use Craft;
 use craft\elements\Entry;
 use craft\helpers\Db;
 use putyourlightson\elementstatusevents\ElementStatusEvents;
@@ -121,10 +121,16 @@ class ScheduledElements extends Controller
      */
     protected function fireEvent(array $elements, $previousStatus = '')
     {
-        if (count($elements) === 0) {
+
+			if (count($elements) === 0) {
             return;
         }
         foreach ($elements as $element) {
+						$updatedEntry = Entry::find()
+						->id($element->id)
+						->anyStatus()
+						->one();
+						Craft::$app->elements->saveElement($updatedEntry);
             Event::trigger(
                 ElementStatusEvents::class,
                 ElementStatusEvents::EVENT_STATUS_CHANGED,
@@ -158,7 +164,7 @@ class ScheduledElements extends Controller
         // Exclude manually published entries (postDate ≅ dateUpdated)
         return array_filter($entries, function (Entry $item) {
             $diffInSeconds = abs($item->postDate->getTimestamp() - $item->dateUpdated->getTimestamp());
-            return ($diffInSeconds > 60);
+            return ($diffInSeconds > 1);
         });
     }
 
